@@ -6,7 +6,7 @@ export class LoginBodyDto {
     @IsString()
     email: string
     @IsString()
-    @Length(6, 20, { message: 'Mật khẩu phải từ 6 đến 20 ký tự' })
+    // @Length(6, 20, { message: 'Mật khẩu phải từ 6 đến 20 ký tự' })
     password: string
 }
 export class RegisterBodyDto extends LoginBodyDto {
@@ -31,10 +31,18 @@ export class RegisterData {
 }
 export class RegisterResDTO extends SuccessResDTO {
     @Type(() => RegisterData)
-     data: RegisterData
+      data: RegisterData = {} as RegisterData
 
     constructor(partial: Partial<RegisterResDTO>) {
         super(partial)
         Object.assign(this, partial)
     }
+}
+export class LoginResDTO {
+  accessToken: string
+  refreshToken: string
+
+  constructor(partial: Partial<LoginResDTO>) {
+    Object.assign(this, partial)
+  }
 }

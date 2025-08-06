@@ -1,9 +1,13 @@
-import { Controller, Get, Post, Body, Param, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, UseGuards } from '@nestjs/common';
+import { AccessTokenGuard } from 'src/shared/guards/access-token.guard';
+import { APIKeyGuard } from 'src/shared/guards/api-key.guard';
 import { PrismaService } from 'src/shared/services/prisma.service';
 
 @Controller('posts')
 export class PostsController {
     constructor(private readonly prismaService: PrismaService) {}
+    @UseGuards(AccessTokenGuard)
+    @UseGuards(APIKeyGuard)
     @Get()
     getPosts() {
         return this.prismaService.post.findMany();

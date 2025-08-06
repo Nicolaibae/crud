@@ -1,9 +1,9 @@
 import { ConflictException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
-import { Prisma } from 'generated/prisma';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { PrismaService } from 'src/shared/services/prisma.service';
 import { LoginBodyDto } from './auth.dto';
 import { TokenService } from 'src/shared/services/token.service';
+import { isNotFoundPrismaError, isUniqueConstraintPrismaError } from 'src/shared/helper';
 
 @Injectable()
 export class AuthService {
@@ -43,7 +43,7 @@ export class AuthService {
             })
             return user
         } catch (error) {
-            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+            if (isUniqueConstraintPrismaError(error)) {
                 throw new ConflictException('Email already exists');
             }
             throw error
@@ -70,7 +70,32 @@ export class AuthService {
             const tokens = await this.generateTokens({ userId: user.id });
             return tokens
         } catch (error) {
-
+            throw error
+        }
+    }
+    async refreshToken(refreshToken: string) {
+        try {
+            //1. Kiểm tra refreshToken có hợp lệ không
+            const { userId } = await this.tokenService.verifyRefreshToken(refreshToken);
+            //2. Kiểm tra refreshToken có tồn tại trong DB không
+            await this.prismaService.refreshToken.findUniqueOrThrow({
+                where: {
+                    token: refreshToken,
+                },
+            })
+            //3. Xoa refreshToken cũ
+            await this.prismaService.refreshToken.delete({
+                where: { token: refreshToken }
+            })
+            //4. Tạo mới refreshToken và accessToken
+            return await this.generateTokens({ userId });
+        } catch (error) {
+            // Trường hợp đã refresh token rồi, hãy thông báo cho user biết
+            // refresh token của họ đã bị đánh cắp
+            if (isNotFoundPrismaError(error)) {
+                throw new UnauthorizedException('Refresh token has been revoked or does not exist');
+            }
+            throw new UnauthorizedException();
         }
     }
 }

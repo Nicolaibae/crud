@@ -98,4 +98,20 @@ export class AuthService {
             throw new UnauthorizedException();
         }
     }
+    async logout(refreshToken: string) {
+        try {
+            //1. Kiểm tra refreshToken có hợp lệ không
+            await this.tokenService.verifyRefreshToken(refreshToken);
+            //2. Xóa refreshToken khỏi DB
+            await this.prismaService.refreshToken.delete({
+                where: { token: refreshToken }
+            })
+            return { message: 'Logged out successfully' };
+        } catch (error) {
+            if (isNotFoundPrismaError(error)) {
+                throw new UnauthorizedException('Refresh token not found');
+            }
+            throw new UnauthorizedException()
+        }
+    }
 }

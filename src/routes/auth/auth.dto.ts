@@ -54,3 +54,11 @@ export class RefreshTokenBodyDto {
 export class RefreshTokenResDTO extends LoginResDTO {
 
 }
+export class LogoutBodyDTO extends RefreshTokenBodyDto {}
+
+export class LogoutResDTO {
+  message: string
+  constructor(partial: Partial<LogoutResDTO>) {
+    Object.assign(this, partial)
+  }
+}
